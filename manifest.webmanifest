@@ -1,0 +1,15 @@
+{
+  "name": "简历撰写助手",
+  "short_name": "简历助手",
+  "description": "本地运行的简历撰写工具：A4 分页预览、AI 润色、导出 PDF/DOCX，数据仅保存在本机浏览器。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#eef1f6",
+  "theme_color": "#4f46e5",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
