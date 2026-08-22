@@ -1,4 +1,4 @@
-# 简历撰写助手（Resume Builder）
+# 简小助（Resume Builder）
 
 一个纯前端、零依赖、可离线运行的简历撰写工具。数据仅保存在本机浏览器，不需要服务器、不注册账号、不采集任何信息。
 
@@ -9,6 +9,7 @@
 - 每项内容支持左对齐 / 居中 / 右对齐，字号对齐 Word 的 23 档字号
 - 支持选中文字局部加粗
 - 手动在任意两个内容之间添加 / 删除横实线
+- 每条内容可添加「时间」（右对齐）与「副文本」（居中），三者同段呈现
 - AI 润色（可选）：自带 OpenAI 兼容接口，DeepSeek / 通义千问 / Moonshot / GLM / 混元 / OpenAI 等均可
 - 导出高清 PDF（无损）与 DOCX（保留字号、对齐、加粗、横线）
 - 导入 DOCX：解析本地 Word 文档文字并写入编辑区
@@ -69,11 +70,12 @@ Netlify / Vercel / Cloudflare Pages 均可：把目录拖拽或关联仓库部�
 ## 目录结构
 
 ```
-resume-builder-open-source/
+resume_make/
 ├── index.html           # 应用主体（单文件，零依赖）
 ├── manifest.webmanifest # PWA 清单
 ├── sw.js                # Service Worker（离线缓存）
 ├── icon.svg             # 应用图标
+├── qr-donate.jpg        # 打赏二维码（hover 展示）
 ├── README.md
 └── LICENSE
 ```
@@ -85,3 +87,4 @@ resume-builder-open-source/
 ## 隐私
 
 所有数据仅保存在用户本地浏览器，不上传。AI 请求直接由用户浏览器发往用户自行填写的 API 地址。
+
