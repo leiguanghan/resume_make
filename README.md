@@ -5,14 +5,16 @@
 ## 功能
 
 - A4 一页纸分页预览，超出一页自动分页，支持自定义缩放
-- 模块化内容编辑：添加 / 删除 / 拖拽排序 / 撤销 / 清空
-- 每项内容支持左对齐 / 居中 / 右对齐，字号对齐 Word 的 23 档字号
-- 支持选中文字局部加粗
+- 模块化内容编辑：添加 / 删除 / 拖拽排序 / 撤销 / 清空；每个模块底部可「＋ 新增内容」快速向下插入新模块
+- 每条内容支持左对齐 / 居中 / 右对齐，字号对齐 Word 的 23 档字号
+- 中英文混排自动精准换行，不会在可同行的字符间强行断行
+- 每条内容可添加「时间」（右对齐）与「副文本」（居中），与主内容同一行呈现；选中文字可局部加粗
 - 手动在任意两个内容之间添加 / 删除横实线
-- 每条内容可添加「时间」（右对齐）与「副文本」（居中），三者同段呈现
-- AI 润色（可选）：自带 OpenAI 兼容接口，DeepSeek / 通义千问 / Moonshot / GLM / 混元 / OpenAI 等均可
-- 导出高清 PDF（无损）与 DOCX（保留字号、对齐、加粗、横线）
+- AI 润色（可选，用户自配 OpenAI 兼容接口）：建议理由展示 AI 的完整思考过程与总结，AI 润色版展示最终建议文字
+- 导出高清 PDF（无损）与 DOCX（保留字号、对齐、加粗、横线、时间、副文本）
 - 导入 DOCX：解析本地 Word 文档文字并写入编辑区
+- 响应式：桌面左右分屏、移动端上下分屏并可一键切换；支持 PWA 离线安装
+- 「打赏」二维码（悬浮展示）
 
 ## 本地运行
 
@@ -51,7 +53,7 @@ npx serve .
 
 ### GitHub + GitHub Pages
 
-1. 在 GitHub 新建仓库，把本目录文件全部上传（`index.html`、`manifest.webmanifest`、`sw.js`、`icon.svg`、`README.md`、`LICENSE`）。
+1. 在 GitHub 新建仓库，把本目录文件全部上传（`index.html`、`manifest.webmanifest`、`sw.js`、`icon.svg`、`qr-donate.jpg`、`README.md`、`LICENSE`）。
 2. 仓库 `Settings → Pages`，Source 选择 `Deploy from a branch`，分支选 `main`、目录选 `/ (root)`，保存。
 3. 几分钟后得到网址 `https://<用户名>.github.io/<仓库名>/`，手机电脑都能直接打开。
 4. 移动端打开后用浏览器「添加到主屏幕」，即可以独立 App 形式离线运行（PWA，需 HTTPS，GitHub Pages 自带 HTTPS）。
@@ -66,6 +68,7 @@ Netlify / Vercel / Cloudflare Pages 均可：把目录拖拽或关联仓库部�
 2. 填写你自有的 OpenAI 兼容接口：API Base URL、API Key、Model Name（可点「常用平台」预设快速填入）。
 3. 密钥只保存在你本机浏览器 localStorage，不会上传到任何服务器。
 4. 可在「全局 Prompt」中自定义润色提示词，并让 AI 帮你优化 Prompt。
+5. AI 建议始终按固定结构输出：`thinking`（完整思考过程与总结）显示在「建议理由」，`polished_text`（最终建议文字）显示在「AI 润色版」。
 
 ## 目录结构
 
@@ -87,4 +90,3 @@ resume_make/
 ## 隐私
 
 所有数据仅保存在用户本地浏览器，不上传。AI 请求直接由用户浏览器发往用户自行填写的 API 地址。
-

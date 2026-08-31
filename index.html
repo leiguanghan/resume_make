@@ -301,7 +301,8 @@ var LSC='resume-builder:cfg:v1';
 var PAGE_W=794,PAGE_H=1123,M_TOP=56,M_BOTTOM=56,M_LEFT=64,M_RIGHT=64;
 var CONTENT_W=PAGE_W-M_LEFT-M_RIGHT;
 var CONTENT_H=PAGE_H-M_TOP-M_BOTTOM;
-var DEFAULT_SYS='你是一位专业的中文简历顾问。请根据用户输入的简历内容，润色语言并给出排版建议。只输出一个 JSON 对象，不要输出代码块或任何多余文字。JSON 字段：{"polished_text":"润色后的文字","suggested_align":"left|center|right","suggested_font_size":"小三|四号|小四|五号|小五","reason":"简短说明修改理由"}。字号只能从小三/四号/小四/五号/小五 中选择；对齐只能从 left/center/right 中选择。';
+var DEFAULT_SYS='你是一位专业的中文简历顾问，擅长润色简历语言并给出排版建议。';
+var AI_OUTPUT='输出格式要求（最高优先级，覆盖上面任何冲突要求）：只输出一个 JSON 对象，不要输出代码块或任何多余文字。字段固定为：{"thinking":"你的完整思考与分析过程，并给出文本总结","polished_text":"最终建议该部分直接采用的润色后文字","suggested_align":"left|center|right","suggested_font_size":"小三|四号|小四|五号|小五"}。thinking 要完整详细；polished_text 必须是最终可采用的文字；字号只能从小三/四号/小四/五号/小五 中选择；对齐只能从 left/center/right 中选择。';
 var PROMPT_OPT='你是提示词工程专家。请优化下面这段用于 AI 简历润色的提示词，使其更清晰、更专业、输出更稳定（仍然要求只返回 JSON）。只输出优化后的提示词正文，不要加解释或代码块。';
 
 var modules=[];
@@ -359,12 +360,19 @@ function flattenSegs(segs){
   for(var i=0;i<segs.length;i++){var t=segs[i].text;for(var j=0;j<t.length;j++){atoms.push({ch:t.charAt(j),bold:segs[i].bold});}}
   return atoms;
 }
+function isCJK(ch){
+  var c=ch.codePointAt(0);
+  return (c>=0x2E80&&c<=0x9FFF)||(c>=0x3040&&c<=0x30FF)||(c>=0x3400&&c<=0x4DBF)||(c>=0xF900&&c<=0xFAFF)||(c>=0xFF00&&c<=0xFFEF)||(c>=0x20000&&c<=0x2FA1F);
+}
 function measureAtoms(atoms,px){
   var w=0;var i=0;
   while(i<atoms.length){
-    var bold=atoms[i].bold;var s='';
-    while(i<atoms.length&&atoms[i].bold===bold){s+=atoms[i].ch;i++;}
-    measCtx.font=(bold?'bold ':'normal ')+px+'px "Times New Roman","Microsoft YaHei",sans-serif';
+    var bold=atoms[i].bold;
+    var cjk=isCJK(atoms[i].ch);
+    var s='';
+    while(i<atoms.length&&atoms[i].bold===bold&&isCJK(atoms[i].ch)===cjk){s+=atoms[i].ch;i++;}
+    var family=cjk?'"Microsoft YaHei","PingFang SC",sans-serif':'"Times New Roman",sans-serif';
+    measCtx.font=(bold?'bold ':'normal ')+px+'px '+family;
     w+=measCtx.measureText(s).width;
   }
   return w;
@@ -609,6 +617,7 @@ function renderEditor(){
     if(m.timeOn){html+='<div class="time-row"><label>时间</label><div class="editor time-editor" contenteditable="true" data-field="time" data-id="'+m.id+'" data-placeholder="如 2024-至今">'+toEditorHTML(m.time)+'</div></div>';}
     if(m.subOn){html+='<div class="time-row"><label>副文本</label><div class="editor sub-editor" contenteditable="true" data-field="sub" data-id="'+m.id+'" data-placeholder="居中的副文本">'+toEditorHTML(m.sub)+'</div></div>';}
     html+='<div class="card-foot">'
+      +'<button class="btn btn-soft btn-sm" data-act="addAfter" data-id="'+m.id+'">＋ 新增内容</button>'
       +'<button class="btn btn-soft btn-sm" data-act="ai" data-id="'+m.id+'">✨ AI 建议</button>'
       +'<button class="btn btn-soft btn-sm" data-act="time" data-id="'+m.id+'">'+(m.timeOn?'— 取消时间':'+ 添加时间')+'</button>'
       +'<button class="btn btn-soft btn-sm" data-act="sub" data-id="'+m.id+'">'+(m.subOn?'— 取消副文本':'+ 添加副文本')+'</button>'
@@ -628,6 +637,16 @@ function renderAll(){renderEditor();renderPreview();updateCount();}
 function addModule(){
   var m=mk('','left','小四',false);
   modules.push(m);
+  normalize();renderAll();persist();commit();
+  var ed=document.querySelector('[data-field="text"][data-id="'+m.id+'"]');
+  if(ed)ed.focus();
+}
+function addModuleAfter(id){
+  var idx=-1;
+  for(var i=0;i<modules.length;i++){if(modules[i].id===id){idx=i;break;}}
+  if(idx<0)return;
+  var m=mk('','left','小四',false);
+  modules.splice(idx+1,0,m);
   normalize();renderAll();persist();commit();
   var ed=document.querySelector('[data-field="text"][data-id="'+m.id+'"]');
   if(ed)ed.focus();
@@ -731,7 +750,7 @@ function onDragEnd(){
 /* ---------------- AI ---------------- */
 function mockSuggest(m){
   var t=plainOf(m.text).replace(/[ \t]+/g,' ').replace(/\s*\|\s*/g,' | ').replace(/：+/g,'：').replace(/，+/g,'，').trim();
-  return {polishedText:t,suggestedAlign:'left',suggestedFontSize:m.fontSize||'小四',reason:'示例建议（未配置 API）：已统一中英文/竖线间距并清理多余空白。在「AI设置」中配置 API Key 后可获得更专业的语言润色与排版建议。'};
+  return {polishedText:t,suggestedAlign:'left',suggestedFontSize:m.fontSize||'小四',reason:'【思考过程】这是一条离线示例建议（未配置 API）。分析：已统一中英文与竖线间距、清理多余空白；建议保持左对齐与当前字号。配置 API Key 后可获得真实 AI 的完整思考与润色。'};
 }
 function buildCtx(m){
   var list='';
@@ -741,10 +760,11 @@ function buildCtx(m){
 function parseAI(c,m){
   var s=null;
   try{var t=String(c||'').replace(/```json/gi,'').replace(/```/g,'').trim();var a=t.indexOf('{');var b=t.lastIndexOf('}');if(a>=0&&b>a){s=JSON.parse(t.slice(a,b+1));}}catch(e){s=null;}
-  if(!s||!s.polished_text){s={polished_text:(String(c||'').trim()||plainOf(m.text)),suggested_align:'left',suggested_font_size:m.fontSize||'小四',reason:'AI 未返回标准 JSON，已采用返回文本。'};}
+  if(!s||!s.polished_text){s={polished_text:(String(c||'').trim()||plainOf(m.text)),suggested_align:'left',suggested_font_size:m.fontSize||'小四',thinking:'AI 未返回标准 JSON，已采用返回文本。'};}
   var font=FONT_PT[s.suggested_font_size]?s.suggested_font_size:(m.fontSize||'小四');
   var align=(s.suggested_align==='center'||s.suggested_align==='right')?s.suggested_align:'left';
-  return {polishedText:s.polished_text,suggestedAlign:align,suggestedFontSize:font,reason:s.reason||''};
+  var reason=s.thinking||s.summary||s.reason||'';
+  return {polishedText:s.polished_text,suggestedAlign:align,suggestedFontSize:font,reason:reason};
 }
 async function runAI(m){
   var sys=cfg.systemPrompt||DEFAULT_SYS;
@@ -752,7 +772,7 @@ async function runAI(m){
   var base=String(cfg.baseUrl||'').replace(/\/+$/,'');
   var url=base+(base.indexOf('/chat/completions')>=0?'':'/chat/completions');
   try{
-    var resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+cfg.apiKey},body:JSON.stringify({model:cfg.modelName,messages:[{role:'system',content:sys},{role:'user',content:buildCtx(m)}],temperature:0.4})});
+    var resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+cfg.apiKey},body:JSON.stringify({model:cfg.modelName,messages:[{role:'system',content:sys},{role:'system',content:AI_OUTPUT},{role:'user',content:buildCtx(m)}],temperature:0.4})});
     if(!resp.ok){var et='';try{et=await resp.text();}catch(e2){}throw new Error('HTTP '+resp.status+(et?(' '+et.slice(0,200)):''));}
     var data=await resp.json();
     var c=(data.choices&&data.choices[0]&&data.choices[0].message)?data.choices[0].message.content:'';
@@ -1201,6 +1221,7 @@ $('moduleList').addEventListener('click',function(e){
   else if(act==='time')toggleTime(id);
   else if(act==='sub')toggleSub(id);
   else if(act==='bold')applyBold(id);
+  else if(act==='addAfter')addModuleAfter(id);
 });
 $('moduleList').addEventListener('mousedown',function(e){
   var b=e.target.closest&&e.target.closest('[data-act="bold"]');
@@ -1310,6 +1331,9 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
 </script>
 </body>
 </html>
+
+
+
 
 
 
